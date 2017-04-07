@@ -498,16 +498,22 @@ Zapp.widgets.visual.fieldCanvas = class {
 		this.height = height || 200
 		this.x = 0; //The location of the center of the view
 		this.y = 0;
-		this.scale = 1; //How "wide" a pixel is in global coordinates. 1 means there is a 1:1 coorespondence in coordinate deltas. An offset of 1 in global coordinates means an offest of one pixel in local coordinates.
-	}	
+		this.scaleX = 1; //How "wide" a pixel is in global coordinates. 1 means there is a 1:1 coorespondence in coordinate deltas. An offset of 1 in global coordinates means an offest of one pixel in local coordinates.
+		this.scaleY = 1;
+		this.absSize = false; //If true, Convert only the coordinates of the draw calls, not the sizing.
+	}
+
+	get scale() {
+		return this.scaleX //Is this the best behavior? Maybe average them instead?
+	}
 	
 	pixelToGlobal(x,y) {
 		x = x-this.width/2
 		y = -(y-this.height/2)
 		//Now the coordinates are in pixels from the CENTER of the screen. (0,0 is the center.)
 		
-		x *= this.scale
-		y *= this.scale
+		x *= this.scaleX
+		y *= this.scaleY
 		
 		x += this.x
 		y += this.y
@@ -520,8 +526,8 @@ Zapp.widgets.visual.fieldCanvas = class {
 		x -= this.x
 		y -= this.y
 		
-		x /= this.scale
-		y /= this.scale
+		x /= this.scaleX
+		y /= this.scaleY
 		
 		x = x+this.width/2
 		y = -y+this.height/2
@@ -530,11 +536,11 @@ Zapp.widgets.visual.fieldCanvas = class {
 	}
 	
 	calcGlobalViewWidth() {
-		return this.scale*this.width;
+		return this.scaleX*this.width;
 	}
 	
 	calcGlobalViewHeight() {
-		return this.scale*this.height;
+		return this.scaleY*this.height;
 	}
 	
 	getMin() { //Returns the coordinates of the bottom-left corner of the canvas. (Minimum x and y values)
@@ -567,9 +573,30 @@ Zapp.widgets.visual.fieldCanvas = class {
 		this.y = y
 	}
 	
-	setScale(scale,originX,originY) {
-		var scaleDelta = scale/this.scale; 
-		var ctxScaleDelta = 1/scaleDelta //Larger scales mean smaller stuff. However, the ctx.scale method is opposite. Scaling by 2 makes everything LARGER. So we need to take the reciprocal.
+	setScale() { //This can be called as setScale(scale[,originX,originY]) or as setScale(scaleX,scaleY[ ,originX,originY])
+		var scaleX;
+		var scaleY;
+		var originX;
+		var originY;
+		
+		if (arguments.length == 2 || arguments.length == 4) { //If have 2 or 4, the must be the second case above.
+			scaleX = arguments[0]
+			scaleY = arguments[1]
+			originX = arguments[2]
+			originY = arguments[3]
+		} else {
+			scaleX = arguments[0]
+			scaleY = arguments[0]
+			originX = arguments[1]
+			originY = arguments[2]
+		}		
+		
+		
+		var scaleDeltaX = scaleX/this.scaleX;
+		var scaleDeltaY = scaleY/this.scaleY;
+		var ctxScaleDeltaX = 1/scaleDeltaX //Larger scales mean smaller stuff. However, the ctx.scale method is opposite. Scaling by 2 makes everything LARGER. So we need to take the reciprocal.
+		var ctxScaleDeltaY = 1/scaleDeltaY
+		
 		originX = originX || this.x
 		originY = originY || this.y
 		
@@ -578,12 +605,13 @@ Zapp.widgets.visual.fieldCanvas = class {
 		var offsetFromOriginY = this.y-originY
 		
 		this.ctx.translate(this.x,this.y) //We have to move back to the origin an then return to where we were in order to have the scale origin be correct.
-		this.ctx.scale(ctxScaleDelta,ctxScaleDelta)
+		this.ctx.scale(ctxScaleDeltaX,ctxScaleDeltaY)
 		this.ctx.translate(-this.x,-this.y)
 		
-		this.setCenter(originX+offsetFromOriginX*scaleDelta,originY+offsetFromOriginY*scaleDelta)
+		this.setCenter(originX+offsetFromOriginX*scaleDeltaX,originY+offsetFromOriginY*scaleDeltaY)
 		
-		this.scale = scale;
+		this.scaleX = scaleX;
+		this.scaleY = scaleY
 	}
 	
 	zoom(factor,originX,originY) { //calling feildCanvas.zoom(2) will make everything bigger by a factor of 2.
@@ -641,6 +669,10 @@ Zapp.widgets.visual.fieldCanvas = class {
 	
 	toHTML() {
 		return '<canvas width='+this.width+' height='+this.height+' id="'+this.id+'"></canvas>'
+	}
+	
+	toggleAbsoluteSizing() {
+		this.absSize = !this.absSize;
 	}
 	
 	
@@ -741,7 +773,16 @@ Zapp.widgets.visual.fieldCanvas = class {
 				this.ctx = document.getElementById(this.id).getContext("2d")
 			}
 			size = size || 1
-		
+			
+			var pConv = [x,y]
+			if (this.absSize) {
+				//We reset the context and stuff to stop the point from being stretched.
+				this.ctx.save();
+				this.ctx.setTransform(1, 0, 0, 1, 0, 0); 
+				
+				pConv = this.globalToPixel(x,y) 
+			}
+			
 			this.ctx.strokeStyle = color || "black"
 			this.ctx.fillStyle = color || "black"
 			this.ctx.lineWidth = 0.00001;
@@ -749,10 +790,13 @@ Zapp.widgets.visual.fieldCanvas = class {
 			this.ctx.beginPath();
 			
 			
-			this.ctx.arc(x,y,(size/2),0,2*Math.PI); //Size is the DIAMETER, NOT the radius.
+			this.ctx.arc(pConv[0],pConv[1],(size/2),0,2*Math.PI); //Size is the DIAMETER, NOT the radius.
 			this.ctx.fill();
 			this.ctx.stroke();
-		
+			
+			if (this.absSize) {
+				this.ctx.restore();
+			}
 		} else {
 			return false;
 		}		
@@ -764,20 +808,54 @@ Zapp.widgets.visual.fieldCanvas = class {
 				this.ctx = document.getElementById(this.id).getContext("2d")
 			}
 
-
+			var p1Conv = [x1,y1]
+			var p2Conv = [x2,y2]
+			if (this.absSize) {
+				//We reset the context and stuff to stop the lines from being stretched.
+				this.ctx.save();
+				this.ctx.setTransform(1, 0, 0, 1, 0, 0); 
+				
+				var p1Conv = this.globalToPixel(x1,y1) 
+				var p2Conv = this.globalToPixel(x2,y2)
+			
+			}
 		
 			this.ctx.strokeStyle = color || "black"
 			this.ctx.lineWidth = size || 1;
 			
 			this.ctx.beginPath();
-			this.ctx.moveTo(x1,y1)
-			this.ctx.lineTo(x2,y2)
+			this.ctx.moveTo(p1Conv[0],p1Conv[1])
+			this.ctx.lineTo(p2Conv[0],p2Conv[1])
 			
 			this.ctx.stroke();
-		
+			
+			if (this.absSize) {
+				this.ctx.restore();
+			}
 		} else {
 			return false;
 		}		
+	}
+	
+	text(text,x,y,style,color) {
+		if (document.getElementById(this.id)) {
+			if (typeof this.ctx == "undefined") {
+				this.ctx = document.getElementById(this.id).getContext("2d")
+			}
+			var pConv = [x,y]
+			this.ctx.save();
+			
+			if (this.absSize) {
+				this.ctx.setTransform(1, 0, 0, 1, 0, 0); 
+				
+				pConv = this.globalToPixel(x,y) 
+			}
+			//this.ctx.scale(1,-1) //flip the y-axis back so we don't have mirrored text.
+			this.ctx.font = style
+			this.ctx.fillStyle = color;
+			this.ctx.fillText(text,pConv[0],pConv[1])
+			this.ctx.restore();
+		}
 	}
 }
 

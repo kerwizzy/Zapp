@@ -431,56 +431,26 @@ Zapp.widgets.visual.canvas = class {
 		}		
 	}
 	
-	addEventListener(eventToListenFor,eventFunction) {
+	addEventListener(eventToListenFor,eventFunction,optionsOrUseCapture,wantsUntrusted) {
 		if (document.getElementById(this.id)) {
 			var thisCanvas = document.getElementById(this.id)
-			if (eventToListenFor == "mousedownXY") {
-				thisCanvas.onmousedown = function(event) {
+			if (eventToListenFor.substr(-2) == "XY") {
+				thisCanvas.addEventListener(eventToListenFor.substr(0,eventToListenFor.length-2),function(event) {
 					var rect = thisCanvas.getBoundingClientRect();
 					var x = event.clientX - rect.left;
 					var y = event.clientY - rect.top;
 
-					var factorX = Number(thisCanvas.clientWidth)/this.width; //Take care of styles that change the size of a canvas.
-					var factorY = Number(thisCanvas.clientHeight)/this.height; 
+					var factorX = Number(thisCanvas.clientWidth)/storedZappCanvasObject.width; //Take care of styles that change the size of a canvas.
+					var factorY = Number(thisCanvas.clientHeight)/storedZappCanvasObject.height; 
 
 					x = Math.floor(x/factorX)
 					y = Math.floor(y/factorY)
-
-					eventFunction(x,y);
 					
-				}
-			} else if (eventToListenFor == "mouseupXY") {
-				thisCanvas.onmouseup = function(event) {
-					var rect = thisCanvas.getBoundingClientRect();
-					var x = event.clientX - rect.left;
-					var y = event.clientY - rect.top;
-
-					var factorX = Number(thisCanvas.clientWidth)/this.width; //Take care of styles that change the size of a canvas.
-					var factorY = Number(thisCanvas.clientHeight)/this.height; 
-
-					x = Math.floor(x/factorX)
-					y = Math.floor(y/factorY)
-
-					eventFunction(x,y);
+					eventFunction(x,y,event);
 					
-				}
-			} else if (eventToListenFor == "mousemoveXY") {
-				thisCanvas.onmousemove = function(event) {
-					var rect = thisCanvas.getBoundingClientRect();
-					var x = event.clientX - rect.left;
-					var y = event.clientY - rect.top;
-
-					var factorX = Number(thisCanvas.clientWidth)/this.width; //Take care of styles that change the size of a canvas.
-					var factorY = Number(thisCanvas.clientHeight)/this.height; 
-
-					x = Math.floor(x/factorX)
-					y = Math.floor(y/factorY)
-
-					eventFunction(x,y);
-					
-				}
+				},optionsOrUseCapture,wantsUntrusted)
 			} else {
-				thisCanvas.addEventListener(eventToListenFor,eventFunction)
+				thisCanvas.addEventListener(eventToListenFor,eventFunction,optionsOrUseCapture,wantsUntrusted)
 			}
 		}		
 	}

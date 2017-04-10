@@ -431,7 +431,20 @@ Zapp.widgets.visual.canvas = class {
 		}		
 	}
 	
+	text(text,x,y,style,color) {
+		if (document.getElementById(this.id)) {
+			if (typeof this.ctx == "undefined") {
+				this.ctx = document.getElementById(this.id).getContext("2d")
+			}
+			
+			this.ctx.font = style
+			this.ctx.fillStyle = color;
+			this.ctx.fillText(text,x,y)
+		}
+	}
+	
 	addEventListener(eventToListenFor,eventFunction,optionsOrUseCapture,wantsUntrusted) {
+		var storedZappCanvasObject = this;
 		if (document.getElementById(this.id)) {
 			var thisCanvas = document.getElementById(this.id)
 			if (eventToListenFor.substr(-2) == "XY") {

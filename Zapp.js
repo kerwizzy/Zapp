@@ -295,78 +295,66 @@ Zapp.widgets.visual.canvas = class {
 		this.id = id;
 		this.width = width || 400
 		this.height = height || 200
+		this.contextInitialized = false
+		this.element
 	}	
 	
 	toHTML() {
 		return '<canvas width='+this.width+' height='+this.height+' id="'+this.id+'"></canvas>'
 	}
 	
-	fill(color) {
+	initializeContext() {
 		if (document.getElementById(this.id)) {
-			if (typeof this.ctx == "undefined") {
-				this.ctx = document.getElementById(this.id).getContext("2d")
-			}
-			
-			this.ctx.fillStyle = color || "white"
-			
-			this.ctx.fillRect(0,0,this.width,this.height)
-			
-			return true;
+			this.contextInitialized = true
+			this.ctx = document.getElementById(this.id).getContext("2d")
+			this.element = document.getElementById(this.id)
 		} else {
-			return false;
-		}
-	}
-	
-	clear() {
-		if (document.getElementById(this.id)) {
-			if (typeof this.ctx == "undefined") {
-				this.ctx = document.getElementById(this.id).getContext("2d")
-			}
-			
-			this.ctx.clearRect(0,0,this.width,this.height);
-			
-			//ctx.fillStyle = "rgba(255,255,255,1) might work too...
-			
-			
-			return true;
-		} else {
-			return false;
+			throw "Cannot initialize context: Element not created."
 		}		
 	}
 	
+	fill(color) {
+		if (!this.contextInitialized) {
+			this.initializeContext()
+		}
+		this.ctx.fillStyle = color || "white"
+		this.ctx.fillRect(0,0,this.width,this.height)
+	}
+	
+	clear() {
+		if (!this.contextInitialized) {
+			this.initializeContext()
+		}
+			
+		this.ctx.clearRect(0,0,this.width,this.height);
+		//ctx.fillStyle = "rgba(255,255,255,1) might work too...	
+	}
+	
 	rect(x,y,width,height,color,rotation) {
-		if (document.getElementById(this.id)) {
-			if (typeof this.ctx == "undefined") {
-				this.ctx = document.getElementById(this.id).getContext("2d")
-			}
-			
-			if (typeof rotation == "undefined") {
-				rotation = 0;
-			}
-			
-			this.ctx.fillStyle = color;
-			
+		if (!this.contextInitialized) {
+			this.initializeContext()
+		}
+		
+		this.ctx.fillStyle = color;
+		if (!rotation) {
+			this.ctx.fillRect(x,y,width,height)
+		} else {			
 			this.ctx.save();
 			this.ctx.translate(x,y)
 			this.ctx.rotate(rotation)
 			this.ctx.fillRect(0,0,width,height)
 			this.ctx.stroke();
 			this.ctx.restore();	
-			
-			return true;
-		} else {
-			return false;
 		}
 	}
 	
 	lineRect(x,y,width,height,color,rotation,lineWidth) { //lineWidth comes after rotation so it is the same argument order as .rect()
-	if (document.getElementById(this.id)) {
-		
-		if (typeof this.ctx == "undefined") {
-			this.ctx = document.getElementById(this.id).getContext("2d")
+		if (!this.contextInitialized) {
+			this.initializeContext()
 		}
-		if (typeof rotation == "undefined") {
-			rotation = 0;
+		
+		if (!rotation) {
+			rotation = 0
 		}
 		
 		this.ctx.strokeStyle = color;
@@ -379,97 +367,77 @@ Zapp.widgets.visual.canvas = class {
 		this.ctx.rect(0,0,width,height)
 		this.ctx.stroke();
 		this.ctx.restore();	
-		
-		return true;
-	} else {
-		return false;
-	}
 	}
 	
 	point(x,y,size,color) {
-		if (document.getElementById(this.id)) {
-			if (typeof this.ctx == "undefined") {
-				this.ctx = document.getElementById(this.id).getContext("2d")
-			}
-			size = size || 1
+		if (!this.contextInitialized) {
+			this.initializeContext()
+		}
+		size = size || 1
+	
+		this.ctx.strokeStyle = color || "black"
+		this.ctx.fillStyle = color || "black"
+		this.ctx.lineWidth = 0.00001;
 		
-			this.ctx.strokeStyle = color || "black"
-			this.ctx.fillStyle = color || "black"
-			this.ctx.lineWidth = 0.00001;
-			
-			this.ctx.beginPath();
-			
-			
-			this.ctx.arc(x,y,(size/2),0,2*Math.PI); //Size is the DIAMETER, NOT the radius.
-			this.ctx.fill();
-			this.ctx.stroke();
+		this.ctx.beginPath();
 		
-		} else {
-			return false;
-		}		
+		
+		this.ctx.arc(x,y,(size/2),0,2*Math.PI); //Size is the DIAMETER, NOT the radius.
+		this.ctx.fill();
+		this.ctx.stroke();	
 	}
 	
 	line(x1,y1,x2,y2,size,color) {
-		if (document.getElementById(this.id)) {
-			if (typeof this.ctx == "undefined") {
-				this.ctx = document.getElementById(this.id).getContext("2d")
-			}
-
-
+		if (!this.contextInitialized) {
+			this.initializeContext()
+		}
+		this.ctx.strokeStyle = color || "black"
+		this.ctx.lineWidth = size || 1;
 		
-			this.ctx.strokeStyle = color || "black"
-			this.ctx.lineWidth = size || 1;
-			
-			this.ctx.beginPath();
-			this.ctx.moveTo(x1,y1)
-			this.ctx.lineTo(x2,y2)
-			
-			this.ctx.stroke();
+		this.ctx.beginPath();
+		this.ctx.moveTo(x1,y1)
+		this.ctx.lineTo(x2,y2)
 		
-		} else {
-			return false;
-		}		
+		this.ctx.stroke();	
 	}
 	
 	text(text,x,y,style,color) {
-		if (document.getElementById(this.id)) {
-			if (typeof this.ctx == "undefined") {
-				this.ctx = document.getElementById(this.id).getContext("2d")
-			}
-			
-			this.ctx.font = style
-			this.ctx.fillStyle = color;
-			this.ctx.fillText(text,x,y)
+		if (!this.contextInitialized) {
+			this.initializeContext()
 		}
+			
+		this.ctx.font = style
+		this.ctx.fillStyle = color;
+		this.ctx.fillText(text,x,y)
+		
 	}
 	
 	addEventListener(eventToListenFor,eventFunction,optionsOrUseCapture,wantsUntrusted) {
 		var storedZappCanvasObject = this;
-		if (document.getElementById(this.id)) {
-			var thisCanvas = document.getElementById(this.id)
-			if (eventToListenFor.substr(-2) == "XY") {
-				thisCanvas.addEventListener(eventToListenFor.substr(0,eventToListenFor.length-2),function(event) {
-					var rect = thisCanvas.getBoundingClientRect();
-					var x = event.clientX - rect.left;
-					var y = event.clientY - rect.top;
+		if (!this.contextInitialized) {
+			this.initializeContext()
+		}
+		
+		var thisCanvas = document.getElementById(this.id)
+		if (eventToListenFor.substr(-2) == "XY") {
+			thisCanvas.addEventListener(eventToListenFor.substr(0,eventToListenFor.length-2),function(event) {
+				var rect = thisCanvas.getBoundingClientRect();
+				var x = event.clientX - rect.left;
+				var y = event.clientY - rect.top;
 
-					var factorX = Number(thisCanvas.clientWidth)/storedZappCanvasObject.width; //Take care of styles that change the size of a canvas.
-					var factorY = Number(thisCanvas.clientHeight)/storedZappCanvasObject.height; 
+				var factorX = Number(thisCanvas.clientWidth)/storedZappCanvasObject.width; //Take care of styles that change the size of a canvas.
+				var factorY = Number(thisCanvas.clientHeight)/storedZappCanvasObject.height; 
 
-					x = Math.floor(x/factorX)
-					y = Math.floor(y/factorY)
-					
-					eventFunction(x,y,event);
-					
-				},optionsOrUseCapture,wantsUntrusted)
-			} else {
-				thisCanvas.addEventListener(eventToListenFor,eventFunction,optionsOrUseCapture,wantsUntrusted)
-			}
-		}		
+				x = Math.floor(x/factorX)
+				y = Math.floor(y/factorY)
+				
+				eventFunction(x,y,event);
+				
+			},optionsOrUseCapture,wantsUntrusted)
+		} else {
+			thisCanvas.addEventListener(eventToListenFor,eventFunction,optionsOrUseCapture,wantsUntrusted)
+		}				
 	}
-	
-	
-	
 }
 
 
@@ -484,6 +452,9 @@ Zapp.widgets.visual.fieldCanvas = class {
 		this.scaleX = 1; //How "wide" a pixel is in global coordinates. 1 means there is a 1:1 coorespondence in coordinate deltas. An offset of 1 in global coordinates means an offest of one pixel in local coordinates.
 		this.scaleY = 1;
 		this.absSize = false; //If true, Convert only the coordinates of the draw calls, not the sizing.
+		
+		this.contextInitialized = false
+		this.element
 	}
 
 	get scale() {
@@ -603,19 +574,14 @@ Zapp.widgets.visual.fieldCanvas = class {
 	
 	initializeContext() {
 		if (document.getElementById(this.id)) {
-			if (typeof this.ctx == "undefined") {
-				this.ctx = document.getElementById(this.id).getContext("2d")
-			}
-			
-			
+			this.contextInitialized = true
+			this.ctx = document.getElementById(this.id).getContext("2d")
+			this.element = document.getElementById(this.id)
 			
 			this.ctx.translate(this.width/2,this.height/2) //Make the origin (0,0) be in the center of the screen.
-			
 			this.ctx.scale(1,-1) //Invert the y-axis
-			
-			return true;
 		} else {
-			return false;
+			throw "Cannot initialize context: Element not created."
 		}
 	}
 	
@@ -660,76 +626,59 @@ Zapp.widgets.visual.fieldCanvas = class {
 	
 	
 	fill(color) {
-		if (document.getElementById(this.id)) {
-			if (typeof this.ctx == "undefined") {
-				this.ctx = document.getElementById(this.id).getContext("2d")
-			}
-			
-			this.ctx.save();
-			this.ctx.setTransform(1, 0, 0, 1, 0, 0); //Reset the context
-			
-			this.ctx.fillStyle = color || "white"
-			
-			this.ctx.fillRect(0,0,this.width,this.height)
-			
-			this.ctx.restore();
-			return true;
-		} else {
-			return false;
+		if (!this.contextInitialized) {
+			this.initializeContext()
 		}
+			
+		this.ctx.save();
+		this.ctx.setTransform(1, 0, 0, 1, 0, 0); //Reset the context
+		
+		this.ctx.fillStyle = color || "white"
+		
+		this.ctx.fillRect(0,0,this.width,this.height)
+		
+		this.ctx.restore();
+
+		
 	}
 	
 	clear() {
-		if (document.getElementById(this.id)) {
-			if (typeof this.ctx == "undefined") {
-				this.ctx = document.getElementById(this.id).getContext("2d")
-			}
+		if (!this.contextInitialized) {
+			this.initializeContext()
+		}
 			
-			this.ctx.save();
-			this.ctx.setTransform(1, 0, 0, 1, 0, 0); //Reset the context
-			this.ctx.clearRect(0,0,this.width,this.height);
-			this.ctx.restore();
-			//ctx.fillStyle = "rgba(255,255,255,1) might work too...
-			
-			
-			return true;
-		} else {
-			return false;
-		}		
+		this.ctx.save();
+		this.ctx.setTransform(1, 0, 0, 1, 0, 0); //Reset the context
+		this.ctx.clearRect(0,0,this.width,this.height);
+		this.ctx.restore();
+		//ctx.fillStyle = "rgba(255,255,255,1) might work too...
 	}
 	
 	rect(x,y,width,height,color,rotation) {
-		if (document.getElementById(this.id)) {
-			if (typeof this.ctx == "undefined") {
-				this.ctx = document.getElementById(this.id).getContext("2d")
-			}
-			
-			if (typeof rotation == "undefined") {
-				rotation = 0;
-			}
-			
-			this.ctx.fillStyle = color;
-			
-			this.ctx.save();
-			this.ctx.translate(x,y)
-			this.ctx.rotate(rotation)
-			this.ctx.fillRect(0,0,width,height)
-			this.ctx.stroke();
-			this.ctx.restore();	
-			
-			return true;
-		} else {
-			return false;
+		if (!this.contextInitialized) {
+			this.initializeContext()
 		}
+			
+		if (!rotation) {
+			rotation = 0;
+		}
+		
+		this.ctx.fillStyle = color;
+		
+		this.ctx.save();
+		this.ctx.translate(x,y)
+		this.ctx.rotate(rotation)
+		this.ctx.fillRect(0,0,width,height)
+		this.ctx.stroke();
+		this.ctx.restore();	
+		
 	}
 	
 	lineRect(x,y,width,height,color,rotation,lineWidth) { //lineWidth comes after rotation so it is the same argument order as .rect()
-	if (document.getElementById(this.id)) {
-		
-		if (typeof this.ctx == "undefined") {
-			this.ctx = document.getElementById(this.id).getContext("2d")
+		if (!this.contextInitialized) {
+			this.initializeContext()
 		}
-		if (typeof rotation == "undefined") {
+		if (!rotation) {
 			rotation = 0;
 		}
 		
@@ -743,102 +692,88 @@ Zapp.widgets.visual.fieldCanvas = class {
 		this.ctx.rect(0,0,width,height)
 		this.ctx.stroke();
 		this.ctx.restore();	
-		
-		return true;
-	} else {
-		return false;
-	}
 	}
 	
 	point(x,y,size,color) {
-		if (document.getElementById(this.id)) {
-			if (typeof this.ctx == "undefined") {
-				this.ctx = document.getElementById(this.id).getContext("2d")
-			}
-			size = size || 1
+		if (!this.contextInitialized) {
+			this.initializeContext()
+		}
+		size = size || 1
+		
+		var pConv = [x,y]
+		if (this.absSize) {
+			//We reset the context and stuff to stop the point from being stretched.
+			this.ctx.save();
+			this.ctx.setTransform(1, 0, 0, 1, 0, 0); 
 			
-			var pConv = [x,y]
-			if (this.absSize) {
-				//We reset the context and stuff to stop the point from being stretched.
-				this.ctx.save();
-				this.ctx.setTransform(1, 0, 0, 1, 0, 0); 
-				
-				pConv = this.globalToPixel(x,y) 
-			}
-			
-			this.ctx.strokeStyle = color || "black"
-			this.ctx.fillStyle = color || "black"
-			this.ctx.lineWidth = 0.00001;
-			
-			this.ctx.beginPath();
-			
-			
-			this.ctx.arc(pConv[0],pConv[1],(size/2),0,2*Math.PI); //Size is the DIAMETER, NOT the radius.
-			this.ctx.fill();
-			this.ctx.stroke();
-			
-			if (this.absSize) {
-				this.ctx.restore();
-			}
-		} else {
-			return false;
+			pConv = this.globalToPixel(x,y) 
+		}
+		
+		this.ctx.strokeStyle = color || "black"
+		this.ctx.fillStyle = color || "black"
+		this.ctx.lineWidth = 0.00001;
+		
+		this.ctx.beginPath();
+		
+		
+		this.ctx.arc(pConv[0],pConv[1],(size/2),0,2*Math.PI); //Size is the DIAMETER, NOT the radius.
+		this.ctx.fill();
+		this.ctx.stroke();
+		
+		if (this.absSize) {
+			this.ctx.restore();
 		}		
 	}
 	
 	line(x1,y1,x2,y2,size,color) {
-		if (document.getElementById(this.id)) {
-			if (typeof this.ctx == "undefined") {
-				this.ctx = document.getElementById(this.id).getContext("2d")
-			}
+		if (!this.contextInitialized) {
+			this.initializeContext()
+		}
 
-			var p1Conv = [x1,y1]
-			var p2Conv = [x2,y2]
-			if (this.absSize) {
-				//We reset the context and stuff to stop the lines from being stretched.
-				this.ctx.save();
-				this.ctx.setTransform(1, 0, 0, 1, 0, 0); 
-				
-				var p1Conv = this.globalToPixel(x1,y1) 
-				var p2Conv = this.globalToPixel(x2,y2)
+		var p1Conv = [x1,y1]
+		var p2Conv = [x2,y2]
+		if (this.absSize) {
+			//We reset the context and stuff to stop the lines from being stretched.
+			this.ctx.save();
+			this.ctx.setTransform(1, 0, 0, 1, 0, 0); 
 			
-			}
+			var p1Conv = this.globalToPixel(x1,y1) 
+			var p2Conv = this.globalToPixel(x2,y2)
 		
-			this.ctx.strokeStyle = color || "black"
-			this.ctx.lineWidth = size || 1;
-			
-			this.ctx.beginPath();
-			this.ctx.moveTo(p1Conv[0],p1Conv[1])
-			this.ctx.lineTo(p2Conv[0],p2Conv[1])
-			
-			this.ctx.stroke();
-			
-			if (this.absSize) {
-				this.ctx.restore();
-			}
-		} else {
-			return false;
-		}		
+		}
+	
+		this.ctx.strokeStyle = color || "black"
+		this.ctx.lineWidth = size || 1;
+		
+		this.ctx.beginPath();
+		this.ctx.moveTo(p1Conv[0],p1Conv[1])
+		this.ctx.lineTo(p2Conv[0],p2Conv[1])
+		
+		this.ctx.stroke();
+		
+		if (this.absSize) {
+			this.ctx.restore();
+		}
+				
 	}
 	
 	text(text,x,y,style,color) {
-		if (document.getElementById(this.id)) {
-			if (typeof this.ctx == "undefined") {
-				this.ctx = document.getElementById(this.id).getContext("2d")
-			}
-			var pConv = [x,y]
-			this.ctx.save();
-			
-			if (this.absSize) {
-				this.ctx.setTransform(1, 0, 0, 1, 0, 0); 
-				
-				pConv = this.globalToPixel(x,y) 
-			}
-			//this.ctx.scale(1,-1) //flip the y-axis back so we don't have mirrored text.
-			this.ctx.font = style
-			this.ctx.fillStyle = color;
-			this.ctx.fillText(text,pConv[0],pConv[1])
-			this.ctx.restore();
+		if (!this.contextInitialized) {
+			this.initializeContext()
 		}
+		var pConv = [x,y]
+		this.ctx.save();
+		
+		if (this.absSize) {
+			this.ctx.setTransform(1, 0, 0, 1, 0, 0); 
+			
+			pConv = this.globalToPixel(x,y) 
+		}
+		//this.ctx.scale(1,-1) //flip the y-axis back so we don't have mirrored text.
+		this.ctx.font = style
+		this.ctx.fillStyle = color;
+		this.ctx.fillText(text,pConv[0],pConv[1])
+		this.ctx.restore();
 	}
 }
 

@@ -930,4 +930,24 @@ Zapp.makeHTML.select = function(id,selectArray,preHTML,postHTML,onchangeCode,cla
 	
 }
 
+Zapp.audio = {}
 
+Zapp.audio.tone = function(hz,duration,volume,type) {
+	if (!type) {
+		type = "sine"
+	}
+	
+	var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+	var oscillator = audioCtx.createOscillator();
+	var gainNode = audioCtx.createGain();
+	gainNode.connect(audioCtx.destination)
+	gainNode.gain.value = volume/100
+	oscillator.connect(gainNode);
+	oscillator.type = type; // sawtooth wave wave — other values are 'sine','square', 'sawtooth', 'triangle' and 'custom'
+	oscillator.frequency.value = hz; // value in hertz
+	oscillator.start();
+	
+	setTimeout(function() {
+		gainNode.disconnect(audioCtx.destination)
+	},duration)
+}

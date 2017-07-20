@@ -1,0 +1,36 @@
+<head>
+<title>My First Zapp Page</title>
+<script src='https://gitcdn.xyz/repo/kerwizzy/Zapp/master/Zapp.js'></script>
+</head>
+<body>
+<canvas id="ZappCanvas" width=500 height=500 style='border:1px solid gray'></canvas>
+<script>
+var canvas = new Zapp.widgets.visual.canvas("ZappCanvas"); //Create a new Zapp canvas object from the canvas in the page with id "canvas"
+
+var drawing = false;
+var lastX = 0; //The last coordinates the user was drawing at. These will be used later.
+var lastY = 0; 
+canvas.addEventListener("mousedownXY",function(x,y,event) {
+	drawing = true
+	lastX = x
+	lastY = y
+})
+
+canvas.addEventListener("mousemoveXY",function(x,y,event) {
+	if (drawing) {
+		canvas.line(lastX,lastY,x,y,5,"red"); //Draw a red line of width 5 from the last position to the current position.
+		canvas.point(x,y,5,"red"); //Add a dot between the line connections to prevent "cracks" from appearing between the lines. (If you comment this out, you'll see what I mean) 
+		lastX = x
+		lastY = y
+	}
+})
+
+canvas.addEventListener("mouseup",function(event) {
+	drawing = false
+})
+
+canvas.addEventListener("mouseleave",function(event) {
+	drawing = false
+})
+</script>
+</body>

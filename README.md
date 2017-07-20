@@ -3,7 +3,7 @@ An easy to use Javascript widget library
 
 Javascript and HTML5 are great, but basic setup like `document.getElementById(...)`, converting number inputs to actual numbers, and many other things, can get in the way of trying out your ideas fast. Zapp solves that problem with lots of simple utility functions and widgets, offering canvas functions, automatic type conversion from inputs, and plenty of useful widgets and tools.
 
-#Features
+# Features
 
 ## Widgets
 
@@ -28,12 +28,12 @@ Javascript and HTML5 are great, but basic setup like `document.getElementById(..
 * **Zapp.utils.cartesianToPolar:** converts from cartesian coordinates to polor coordinates
 * **Zapp.utils.bootstrapify:** automatically assigns class `btn btn-default` to all classless button elements
 
-##Audio
+## Audio
 
 * **Zapp.audio.tone:** a simple interface for playing a tone for a duration of time.
 * **Zapp.audio.halfstepsToHertz:** converts between half-steps (a musical measure of pitch) to hertz (a frequency measure of pitch, and what is needed for Zapp.audio.tone)
 
-#Getting Started
+# Getting Started
 
 The most useful part of Zapp is the canvas API, especially the fieldCanvas API, so this is a good place to start when trying out Zapp for the first time. To get started, make a simple HTML page like this:
 

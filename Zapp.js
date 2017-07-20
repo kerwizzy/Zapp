@@ -292,11 +292,37 @@ Zapp.widgets.visual = {}
 
 Zapp.widgets.visual.canvas = class {
 	constructor(id,width,height) {
-		this.id = id;
-		this.width = width || 400
-		this.height = height || 200
-		this.contextInitialized = false
-		this.element
+		if (width) { //Original/legacy setup code
+			this.id = id;
+			this.setwidth = width //Width to initialize the canvas with, when calling the toHTML method
+			this.setheight = height
+			this.contextInitialized = false
+			this.element
+		} else {
+			if (typeof id == "string" || typeof id == "undefined" || id instanceof HTMLElement) { //create a Zapp canvas object from a currently existing canvas
+				var elem
+				if (typeof id == "string") {
+					elem = document.getElementById(id)
+				} else if (typeof id=="undefined") {
+					elem = document.createElement("CANVAS")
+				} else {
+					elem = id
+				}
+				
+				if (elem.nodeName == "CANVAS") {
+					this.element = elem
+					this.width = elem.width
+					this.height = elem.height
+					this.id = elem.id
+					this.initializeContext();
+				} else {
+					throw "Given element or id is not a canvas."
+				}
+			} else {
+				throw "Unable to create Zapp canvas object from given parameters"
+			}			
+		}
+		
 	}	
 	
 	toHTML() {
@@ -308,10 +334,48 @@ Zapp.widgets.visual.canvas = class {
 			this.contextInitialized = true
 			this.ctx = document.getElementById(this.id).getContext("2d")
 			this.element = document.getElementById(this.id)
+		} else if (this.element) {
+			this.contextInitialized = true
+			this.ctx = this.element.getContext("2d")
 		} else {
 			throw "Cannot initialize context: Element not created."
 		}		
 	}
+	
+	set width(val) {
+		if (!this.element) {
+			this.setwidth = val
+		} else {
+			this.element.width = val
+			this.initializeContext(); //Update the context
+		}
+	}
+	
+	get width() {
+		if (!this.element) {
+			return this.setwidth
+		} else {
+			return this.element.width
+		}
+	}
+	
+	set height(val) {
+		if (!this.element) {
+			this.setheight = val
+		} else {
+			this.element.height = val
+			this.initializeContext(); //Update the context
+		}
+	}
+	
+	get height() {
+		if (!this.element) {
+			return this.setheight
+		} else {
+			return this.element.height
+		}
+	}
+
 	
 	fill(color) {
 		if (!this.contextInitialized) {
@@ -932,7 +996,7 @@ Zapp.makeHTML.select = function(id,selectArray,preHTML,postHTML,onchangeCode,cla
 
 Zapp.audio = {}
 
-Zapp.audio.tone = function(hz,duration,volume,type) {
+Zapp.audio.tone = function(hz,duration,volume,type,callback) {
 	if (!type) {
 		type = "sine"
 	}
@@ -949,5 +1013,16 @@ Zapp.audio.tone = function(hz,duration,volume,type) {
 	
 	setTimeout(function() {
 		gainNode.disconnect(audioCtx.destination)
+		if (callback) {
+			callback()
+		}
 	},duration)
+}
+
+Zapp.audio.halfstepsToHertz = function(halfsteps,octave) { //Half steps is number of half steps up from A3
+
+	
+	//Good info at http://www.phy.mtu.edu/~suits/NoteFreqCalcs.html
+	return Math.pow(Math.pow(2,1/12),halfsteps)*(32.70 *Math.pow(2,octave))
+	
 }

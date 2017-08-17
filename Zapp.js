@@ -299,13 +299,13 @@ Zapp.widgets.visual.canvas = class {
 			this.contextInitialized = false
 			this.element
 		} else {
-			if (typeof id == "string" || typeof id == "undefined" || id instanceof HTMLElement) { //create a Zapp canvas object from a currently existing canvas
+			if (typeof id == "string" || typeof id == "undefined" || id instanceof HTMLElement) {
 				var elem
-				if (typeof id == "string") {
+				if (typeof id == "string") { //Currently existing canvas
 					elem = document.getElementById(id)
-				} else if (typeof id=="undefined") {
+				} else if (typeof id=="undefined") { //Make canvas element without adding to dom
 					elem = document.createElement("CANVAS")
-				} else {
+				} else { //From element
 					elem = id
 				}
 				
@@ -482,7 +482,7 @@ Zapp.widgets.visual.canvas = class {
 			this.initializeContext()
 		}
 		
-		var thisCanvas = document.getElementById(this.id)
+		var thisCanvas = this.element
 		if (eventToListenFor.substr(-2) == "XY") {
 			thisCanvas.addEventListener(eventToListenFor.substr(0,eventToListenFor.length-2),function(event) {
 				var rect = thisCanvas.getBoundingClientRect();
@@ -508,17 +508,76 @@ Zapp.widgets.visual.canvas = class {
 
 Zapp.widgets.visual.fieldCanvas = class {
 	constructor(id,width,height) {
-		this.id = id;
-		this.width = width || 400
-		this.height = height || 200
 		this.x = 0; //The location of the center of the view
 		this.y = 0;
 		this.scaleX = 1; //How "wide" a pixel is in global coordinates. 1 means there is a 1:1 coorespondence in coordinate deltas. An offset of 1 in global coordinates means an offest of one pixel in local coordinates.
 		this.scaleY = 1;
 		this.absSize = false; //If true, Convert only the coordinates of the draw calls, not the sizing.
 		
-		this.contextInitialized = false
-		this.element
+		if (width) {
+			this.id = id;
+			this.setwidth = width //Width to initialize the canvas with, when calling the toHTML method
+			this.setheight = height
+			this.contextInitialized = false
+			this.element
+		} else {
+			if (typeof id == "string" || typeof id == "undefined" || id instanceof HTMLElement) {
+				var elem
+				if (typeof id == "string") {
+					elem = document.getElementById(id)
+				} else if (typeof id=="undefined") {
+					elem = document.createElement("CANVAS")
+				} else {
+					elem = id
+				}
+				
+				if (elem.nodeName == "CANVAS") {
+					this.element = elem
+					this.width = elem.width
+					this.height = elem.height
+					this.id = elem.id
+					this.initializeContext();
+				} else {
+					throw "Given element or id is not a canvas."
+				}
+			} else {
+				throw "Unable to create Zapp field canvas object from given parameters"
+			}			
+		}
+	}
+	
+	set width(val) {
+		if (!this.element) {
+			this.setwidth = val
+		} else {
+			this.element.width = val
+			this.initializeContext(); //Update the context
+		}
+	}
+	
+	get width() {
+		if (!this.element) {
+			return this.setwidth
+		} else {
+			return this.element.width
+		}
+	}
+	
+	set height(val) {
+		if (!this.element) {
+			this.setheight = val
+		} else {
+			this.element.height = val
+			this.initializeContext(); //Update the context
+		}
+	}
+	
+	get height() {
+		if (!this.element) {
+			return this.setheight
+		} else {
+			return this.element.height
+		}
 	}
 
 	get scale() {
@@ -641,42 +700,64 @@ Zapp.widgets.visual.fieldCanvas = class {
 			this.contextInitialized = true
 			this.ctx = document.getElementById(this.id).getContext("2d")
 			this.element = document.getElementById(this.id)
-			
-			this.ctx.translate(this.width/2,this.height/2) //Make the origin (0,0) be in the center of the screen.
-			this.ctx.scale(1,-1) //Invert the y-axis
+		} else if (this.element) {
+			this.contextInitialized = true
+			this.ctx = this.element.getContext("2d")
 		} else {
 			throw "Cannot initialize context: Element not created."
+		}		
+
+		if (this.contextInitialized) {
+			this.ctx.translate(this.width/2,this.height/2) //Make the origin (0,0) be in the center of the screen.
+			this.ctx.scale(1,-1) //Invert the y-axis
 		}
 	}
 	
 	addEventListener(eventToListenFor,eventFunction,optionsOrUseCapture,wantsUntrusted) {
 		var storedZappCanvasObject = this;
-		if (document.getElementById(this.id)) {
-			var thisCanvas = document.getElementById(this.id)			
-			if (eventToListenFor.substr(-2) == "XY") {
-				thisCanvas.addEventListener(eventToListenFor.substr(0,eventToListenFor.length-2),function(event) {
-					var rect = thisCanvas.getBoundingClientRect();
-					var x = event.clientX - rect.left;
-					var y = event.clientY - rect.top;
+		if (!this.contextInitialized) {
+			this.initializeContext()
+		}
+		
+		var thisCanvas = this.element
+		if (eventToListenFor.substr(-2) == "XY") {
+			thisCanvas.addEventListener(eventToListenFor.substr(0,eventToListenFor.length-2),function(event) {
+				var rect = thisCanvas.getBoundingClientRect();
+				var x = event.clientX - rect.left;
+				var y = event.clientY - rect.top;
 
-					var factorX = Number(thisCanvas.clientWidth)/storedZappCanvasObject.width; //Take care of styles that change the size of a canvas.
-					var factorY = Number(thisCanvas.clientHeight)/storedZappCanvasObject.height; 
+				var factorX = Number(thisCanvas.clientWidth)/storedZappCanvasObject.width; //Take care of styles that change the size of a canvas.
+				var factorY = Number(thisCanvas.clientHeight)/storedZappCanvasObject.height; 
 
-					x = Math.floor(x/factorX)
-					y = Math.floor(y/factorY)
-					
-					var convertedCoordinates = storedZappCanvasObject.pixelToGlobal(x,y)
-					
-					
-					eventFunction(convertedCoordinates[0],convertedCoordinates[1],event);
-					
-				},optionsOrUseCapture,wantsUntrusted)
-			} else {
-				thisCanvas.addEventListener(eventToListenFor,eventFunction,optionsOrUseCapture,wantsUntrusted)
-			}
+				x = Math.floor(x/factorX)
+				y = Math.floor(y/factorY)
+				
+				var convertedCoordinates = storedZappCanvasObject.pixelToGlobal(x,y)
+				
+				
+				eventFunction(convertedCoordinates[0],convertedCoordinates[1],event);
+				
+			},optionsOrUseCapture,wantsUntrusted)
+		} else {
+			thisCanvas.addEventListener(eventToListenFor,eventFunction,optionsOrUseCapture,wantsUntrusted)
 		}		
 	}	
 	
+	addZoom(zoomDelta,callback) {//Convenience method to add a simple zoom control
+		if (!zoomDelta) {
+			zoomDelta = 0.9
+		}
+		this.addEventListener("wheelXY",function(x,y,event) {
+			if (event.deltaY > 0) {
+				canvas.zoom(zoomDelta,x,y)
+			} else {
+				canvas.zoom(1/zoomDelta,x,y)
+			}
+			if (callback) {
+				callback();
+			}
+		})
+	}
 	
 	/* All the functions below here are the same as in the plain canvas class */
 	

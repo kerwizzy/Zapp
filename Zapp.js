@@ -514,19 +514,23 @@ Zapp.widgets.visual.fieldCanvas = class {
 		this.scaleY = 1;
 		this.absSize = false; //If true, Convert only the coordinates of the draw calls, not the sizing.
 		
-		if (width) {
+		if (height) { //3 argument call
 			this.id = id;
 			this.setwidth = width //Width to initialize the canvas with, when calling the toHTML method
 			this.setheight = height
 			this.contextInitialized = false
 			this.element
 		} else {
-			if (typeof id == "string" || typeof id == "undefined" || id instanceof HTMLElement) {
+			if (typeof id == "string" || typeof id == "undefined" || typeof id == "number" || id instanceof HTMLElement) {
 				var elem
 				if (typeof id == "string") {
 					elem = document.getElementById(id)
 				} else if (typeof id=="undefined") {
 					elem = document.createElement("CANVAS")
+				} else if (typeof id=="number") {
+					elem = document.createElement("CANVAS")
+					elem.width = id
+					elem.height = width
 				} else {
 					elem = id
 				}

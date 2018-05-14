@@ -292,20 +292,23 @@ Zapp.widgets.visual = {}
 
 Zapp.widgets.visual.canvas = class {
 	constructor(id,width,height) {
-		if (width) { //Original/legacy setup code
+		if (height) { //3 argument call
 			this.id = id;
 			this.setwidth = width //Width to initialize the canvas with, when calling the toHTML method
 			this.setheight = height
 			this.contextInitialized = false
-			this.element
 		} else {
-			if (typeof id == "string" || typeof id == "undefined" || id instanceof HTMLElement) {
+			if (typeof id == "string" || typeof id == "undefined" || typeof id == "number" || id instanceof HTMLElement) {
 				var elem
-				if (typeof id == "string") { //Currently existing canvas
+				if (typeof id == "string") {
 					elem = document.getElementById(id)
-				} else if (typeof id=="undefined") { //Make canvas element without adding to dom
+				} else if (typeof id=="undefined") {
 					elem = document.createElement("CANVAS")
-				} else { //From element
+				} else if (typeof id=="number") {
+					elem = document.createElement("CANVAS")
+					elem.width = id
+					elem.height = width
+				} else {
 					elem = id
 				}
 				
@@ -319,7 +322,7 @@ Zapp.widgets.visual.canvas = class {
 					throw "Given element or id is not a canvas."
 				}
 			} else {
-				throw "Unable to create Zapp canvas object from given parameters"
+				throw "Unable to create Zapp field canvas object from given parameters"
 			}			
 		}
 		
@@ -519,7 +522,6 @@ Zapp.widgets.visual.fieldCanvas = class {
 			this.setwidth = width //Width to initialize the canvas with, when calling the toHTML method
 			this.setheight = height
 			this.contextInitialized = false
-			this.element
 		} else {
 			if (typeof id == "string" || typeof id == "undefined" || typeof id == "number" || id instanceof HTMLElement) {
 				var elem

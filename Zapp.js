@@ -1083,15 +1083,16 @@ Zapp.makeHTML.select = function(id,selectArray,preHTML,postHTML,onchangeCode,cla
 
 Zapp.audio = {}
 
+Zapp.audio.ctx = new (window.AudioContext || window.webkitAudioContext)();
+
 Zapp.audio.tone = function(hz,duration,volume,type,callback) {
 	if (!type) {
 		type = "sine"
 	}
 	
-	var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-	var oscillator = audioCtx.createOscillator();
-	var gainNode = audioCtx.createGain();
-	gainNode.connect(audioCtx.destination)
+	var oscillator = Zapp.audio.ctx.createOscillator();
+	var gainNode = Zapp.audio.ctx.createGain();
+	gainNode.connect(Zapp.audio.ctx.destination)
 	gainNode.gain.value = volume/100
 	oscillator.connect(gainNode);
 	oscillator.type = type; // sawtooth wave wave — other values are 'sine','square', 'sawtooth', 'triangle' and 'custom'
@@ -1099,7 +1100,7 @@ Zapp.audio.tone = function(hz,duration,volume,type,callback) {
 	oscillator.start();
 	
 	setTimeout(function() {
-		gainNode.disconnect(audioCtx.destination)
+		gainNode.disconnect(Zapp.audio.ctx.destination)
 		if (callback) {
 			callback()
 		}
@@ -1107,9 +1108,6 @@ Zapp.audio.tone = function(hz,duration,volume,type,callback) {
 }
 
 Zapp.audio.halfstepsToHertz = function(halfsteps,octave) { //Half steps is number of half steps up from A3
-
-	
 	//Good info at http://www.phy.mtu.edu/~suits/NoteFreqCalcs.html
 	return Math.pow(Math.pow(2,1/12),halfsteps)*(32.70 *Math.pow(2,octave))
-	
 }
